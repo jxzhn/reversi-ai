@@ -10,8 +10,6 @@ WIDTH = 30      # 格子边长
 PADDING = 3     # 棋子到外接格子的边距
 LINE = 2        # 网格线粗细
 
-SLEEP_TIME = 0.5
-
 class ReversiGUIManager():
     def __init__(self, size: int = 8):
         window = tkinter.Tk()
@@ -79,8 +77,6 @@ class ReversiGUIManager():
             while reversi.next == ai:
                 if aiPlayed:
                     print('You have no position to place your chess, so it\'s still AI\'s turn.')
-                
-                time.sleep(SLEEP_TIME)
 
                 position = brain(reversi, ai)
                 status = reversi.place(position, ai)
@@ -115,8 +111,6 @@ class ReversiGUIManager():
         draw() # 绘制初始棋局
 
         if ai == 1: # AI 先手
-            time.sleep(SLEEP_TIME)
-            
             position = brain(reversi, ai)
             _ = reversi.place(position, ai)
 

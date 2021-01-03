@@ -11,10 +11,10 @@ class Reversi():
 
         # 初始时棋盘上有四颗棋子
         ii = size // 2
-        self.board[ii - 1][ii - 1] = 1
-        self.board[ii][ii] = 1
-        self.board[ii - 1][ii] = 2
-        self.board[ii][ii - 1] = 2
+        self.board[ii - 1][ii] = 1
+        self.board[ii][ii - 1] = 1
+        self.board[ii - 1][ii - 1] = 2
+        self.board[ii][ii] = 2
 
         self.number = {1: 2, 2: 2} # 各棋子个数
         
