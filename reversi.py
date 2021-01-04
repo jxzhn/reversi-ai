@@ -3,14 +3,15 @@ from typing import Tuple
 import itertools
 
 Coordinate = Tuple[int, int]
+SIZE = 8
 
 class Reversi():
-    def __init__(self, size: int = 8):
-        self.size = size
-        self.board = [[0 for _ in range(size)] for _ in range(size)]
+    def __init__(self):
+        self.size = SIZE
+        self.board = [[0 for _ in range(SIZE)] for _ in range(SIZE)]
 
         # 初始时棋盘上有四颗棋子
-        ii = size // 2
+        ii = SIZE // 2
         self.board[ii - 1][ii] = 1
         self.board[ii][ii - 1] = 1
         self.board[ii - 1][ii - 1] = 2
@@ -19,7 +20,7 @@ class Reversi():
         self.number = {1: 2, 2: 2} # 各棋子个数
         
         self.next = 1 # 轮到哪个颜色
-        self.good = [[False for _ in range(size)] for _ in range(size)]
+        self.good = [[False for _ in range(SIZE)] for _ in range(SIZE)]
         self.analyse()
 
         self.recent = (-1, -1) # 记录最近一个棋子的位置（用于GUI提示）
