@@ -66,6 +66,7 @@ def main():
             states = envs.reset()
             done = False
             while not done:
+                states = states.to(device)
                 _, policys = net(states)
                 # 不能下的位置概率填 0
                 for i in range(NUM_WORKERS):
@@ -73,7 +74,7 @@ def main():
                         if not envs.reversis[i].good[y][x]:
                             policys[i][y * SIZE + x] = 0.
                 actions = Categorical(probs=policys).sample()
-                done, states = envs.step(actions)
+                done, states = envs.step(actions.cpu())
         
         envs.setReturn()
         data = EpisodeData(envs.readHistory())
@@ -87,6 +88,7 @@ def main():
         entropy_total = 0.
 
         for states, actions, Returns in loader:
+            states, actions, Returns = states.to(device), actions.to(device), Returns.to(device)
             values, policys = net(states)
 
             dist = Categorical(probs=policys)
