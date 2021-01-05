@@ -15,6 +15,7 @@ class multiplayer:
         self.historys = [[] for i in range(num_workers)] # 分开记录每个棋局的历史记录
         self.end = [False for i in range(num_workers)] # 某个worker的棋局是否结束
         self.reversis = [Reversi() for i in range(num_workers)]
+        self.pool = Pool(self.num_workers)
 
     # state格式为(3, SIZE, SIZE)，全都是0或1，第一张图是黑棋位置，第二张图是白棋位置（1表示有）
     # 最后一张全0表示下一步是白棋走全1表示是黑棋走
@@ -24,13 +25,9 @@ class multiplayer:
     def reset(self) -> torch.Tensor: # (num_worker, 3, SIZE, SIZE)
         for i in range(self.num_workers):
             self.historys[i].clear() # 重置是清空棋盘记录
-        pool = Pool(self.num_workers)
         args = [(self.reversis, idx) for idx in range(self.num_workers)]
-        info = pool.map(resetABoard, args)
+        info = self.pool.map(resetABoard, args)
         info = torch.Tensor(info)
-        pool.close()
-        pool.join()
-        # print(info.size())
         return info
 
     # 让所有棋盘都走一步，输入：坐标列表
@@ -43,11 +40,8 @@ class multiplayer:
             x = actions_in_int[i] - (y * SIZE)
             actions.append((y, x))
         # 并行生成history
-        pool = Pool(self.num_workers)
         args = [(self.reversis, actions, self.end, idx) for idx in range(self.num_workers)]
-        info = pool.map(getHistory, args)
-        pool.close()
-        pool.join()
+        info = self.pool.map(getHistory, args)
         # 附加到history中
         for idx in range(self.num_workers):
             if info[idx] != None:
