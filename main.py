@@ -14,7 +14,7 @@ import itertools
 GAMMA = 0.99
 EPISODES = 10_000
 SAVE_INTERVAL = 10
-NUM_WORKERS = 4
+NUM_WORKERS = 28
 BATCH_SIZE = 32
 VALUE_LOSS_COEF = 0.5
 ENTROPY_LOSS_CEOF = 0.01
@@ -58,7 +58,6 @@ def main():
     
     # 开始训练
     for episode in range(EPISODES):
-        print(episode, end='\r')
 
         # 从多个环境采集一回合数据
         net.eval()
@@ -68,13 +67,17 @@ def main():
             while not done:
                 states = states.to(device)
                 _, policys = net(states)
+                policys = policys.cpu() # 移到CPU上处理比较好
                 # 不能下的位置概率填 0
                 for i in range(NUM_WORKERS):
-                    for y, x in itertools.product(range(SIZE), repeat=2):
-                        if not envs.reversis[i].good[y][x]:
-                            policys[i][y * SIZE + x] = 0.
+                    if envs.reversis[i].next != 0:
+                        for y, x in itertools.product(range(SIZE), repeat=2):
+                            if not envs.reversis[i].good[y][x]:
+                                policys[i][y * SIZE + x] = 0.
+                            else:
+                                policys[i][y * SIZE + x] += 1e-8 # 防止概率全为 0
                 actions = Categorical(probs=policys).sample()
-                done, states = envs.step(actions.cpu())
+                done, states = envs.step(actions)
         
         envs.setReturn()
         data = EpisodeData(envs.readHistory())
@@ -107,15 +110,16 @@ def main():
             value_loss_total += value_loss.item()
             entropy_total += dist_entropy.item()
         
-        if episode % SAVE_INTERVAL == 0:
-            print('Episode: {:>10d}, Value Loss: {:g}, Entropy: {:g}'.format(
-                episode,
-                value_loss_total / len(loader),
-                entropy_total / len(loader)
-                ), flush=True)
-            # if not os.path.isdir('models'):
-            #     os.mkdir('models')
-            # torch.save(net.state_dict(), 'models/{}.pt'.format(episode // SAVE_INTERVAL))
+        print('Episode: {:>10d}, Value Loss: {:g}, Entropy: {:g}'.format(
+            episode,
+            value_loss_total / len(loader),
+            entropy_total / len(loader)
+            ), flush=True)
+        
+        if episode != 0 and episode % SAVE_INTERVAL == 0:
+            if not os.path.isdir('models'):
+                os.mkdir('models')
+            torch.save(net.state_dict(), 'models/{}.pt'.format(episode // SAVE_INTERVAL))
 
 if __name__ == '__main__':
     main()
