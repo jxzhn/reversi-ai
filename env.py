@@ -66,7 +66,7 @@ class multiplayer:
                     status = self.reversis[i].place(actions[i], 2)
                     result = checkPlaceStatus(status)
                 if result != -1:
-                    end = True
+                    self.end[i] = True
 
         finish = (sum(self.end) == self.num_workers)
         for idx in range(self.num_workers):
@@ -85,7 +85,7 @@ class multiplayer:
                 self.historys[i][t][2] = R # s[t].R = R
 
     # 取得合并后的history
-    def getHistory(self) -> List[SARSD]:
+    def readHistory(self) -> List[SARSD]:
         history = []
         for i in range(self.num_workers):
             for j in range(len(self.historys[i])):
@@ -131,6 +131,7 @@ def getHistory(arg):
         # 走棋
         a = reversi.next # 记录这一步是谁走的
         b = 2 if a == 1 else 1 
+        result = -1
         if reversi.next == 1: # 这一步走黑棋
             status = reversi.place(action, 1)
             result = checkPlaceStatus(status)
@@ -169,12 +170,30 @@ def checkPlaceStatus(status: str) -> int:
     elif status != 'ok':
         raise Exception('Should not reach here!')
 
-# test
-m = multiplayer(4, gamma)
-m.reset()
-m.step([44, 44, 44, 44])
-m.setReturn()
-h = m.getHistory()
-m.step([29, 29, 29, 29])
-m.setReturn()
-h = m.getHistory()
+# 顺序：
+# 1：m.reset()
+# 2：每次要走下一步 m.step([44, 44, 44, 44])
+# 3：所有棋局都结束之后 m.setReturn()
+# 4：读取路径记录 h = m.readHistory()
+if __name__ == '__main__':
+    m = multiplayer(2, gamma)
+    import random
+    def randomAgent(reversi: Reversi):
+        available = [(y, x) for (y, x) in itertools.product(range(reversi.size), repeat=2) if reversi.good[y][x]]
+        return random.choice(available)
+
+    m.reset()
+    idx = 0
+    while True:
+        y1, x1 = randomAgent(m.reversis[0])
+        y2, x2 = randomAgent(m.reversis[1])    
+        actions = [y1 * SIZE + x1, y2 * SIZE + x2]
+        #actions = [y1 * SIZE + x1]
+        finish, _ = m.step(actions)
+        if finish:
+            break
+    print('end while')
+    m.setReturn()
+    h = m.readHistory()
+    for i in range(len(h)):
+        print(h[i][2])
