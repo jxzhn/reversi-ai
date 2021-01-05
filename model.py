@@ -39,12 +39,12 @@ class Block(nn.Module): # 残差块
         out = F.relu(self.bn3(self.conv3(out)) + self.shortcut(x))
         return out
 
-class Policy(nn.Module): # 使用残差CNN结构的Actor-Critic网络
-    def __init__(self, in_channels: int):
-        super(Policy, self).__init__()
+class ActorCritic(nn.Module): # 卷积残差网络
+    def __init__(self):
+        super(ActorCritic, self).__init__()
         self.size = SIZE
         
-        self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1,
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1,
             padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
 
@@ -88,9 +88,5 @@ class Policy(nn.Module): # 使用残差CNN结构的Actor-Critic网络
         out = F.adaptive_avg_pool2d(out, (1, 1))
         out = out.view(out.size(0), -1)
         value = self.critic_linear(out)
-        policy = self.actor_linear(out)
+        policy = F.softmax(self.actor_linear(out), dim=-1)
         return value, policy
-    
-# def A2CAgent:
-#     def __init__(self):
-#         self.

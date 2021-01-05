@@ -23,7 +23,7 @@ class Reversi():
         self.good = [[False for _ in range(SIZE)] for _ in range(SIZE)]
         self.analyse()
 
-        self.recent = (-1, -1) # 记录最近一个棋子的位置（用于GUI提示）
+        self.recent = None # 记录最近一个棋子的位置
     
     def place(self, postion: Coordinate, player: int) -> str:
         y, x = postion

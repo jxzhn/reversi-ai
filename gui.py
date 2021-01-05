@@ -35,7 +35,7 @@ class ReversiGUIManager():
         
         # 辅助函数：绘制最近一个棋子的虚线框，并重绘整个棋盘上的棋子（懒得判断翻转）
         def draw():
-            if reversi.recent != (-1, -1):
+            if reversi.recent:
                 self.canvas.delete('hint-recent')
                 y, x = reversi.recent
                 yy, xx = y * WIDTH, x * WIDTH 
