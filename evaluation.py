@@ -33,14 +33,22 @@ if __name__ == '__main__':
         available = [(y, x) for (y, x) in itertools.product(range(reversi.size), repeat=2) if reversi.good[y][x]]
         return random.choice(available)
     
-    counter = [0, 0, 0] # [平局，黑棋赢，白棋赢]
+    from agent import Agent
+    agent = Agent()
+    
+    counter = [0, 0, 0] # [AI赢，随机赢，平局]
     
     import time
     t = time.time()
 
-    for i in range(1000):
+    for i in range(50):
+        print(i, end='\r')
+        # AI先手
         reversi = Reversi()
-        counter[play(reversi, randomAgent, randomAgent)] += 1
+        counter[[2, 0, 1][play(reversi, agent.brain, randomAgent)]] += 1
+        # AI后手
+        reversi = Reversi()
+        counter[[2, 1, 0][play(reversi, randomAgent, agent.brain)]] += 1
     
-    print(f'1000 episodes finished in {time.time() - t :g} seconds, {counter}')
+    print(f'100 episodes finished in {time.time() - t :g} seconds, {counter}')
     

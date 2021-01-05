@@ -3,8 +3,8 @@ from typing import Callable
 import tkinter
 import tkinter.messagebox
 import itertools
-import time
 from reversi import Coordinate, Reversi
+from agent import Agent
 
 WIDTH = 30      # 格子边长
 PADDING = 3     # 棋子到外接格子的边距
@@ -58,16 +58,18 @@ class ReversiGUIManager():
             
             status = reversi.place((y, x), who)
 
+            if status == 'no':
+                return
+
             self.canvas.delete('mouse-hint') # 清除鼠标位置提示
             draw()
+            print('You place at {}, black: {}, white: {}'.format((x, y), reversi.number[1], reversi.number[2]))
             
             if status.startswith('end'):
                 msg = 'Draw' if status == 'end 0' else f'Player {status[-1]} wins!'
                 tkinter.messagebox.showinfo(title='Game Over', message=msg)
                 self.canvas.unbind('<Motion>')
                 self.canvas.unbind('<Button-1>')
-                return
-            elif status != 'ok':
                 return
             
             # 轮到AI下棋
@@ -81,6 +83,12 @@ class ReversiGUIManager():
                 position = brain(reversi, ai)
                 status = reversi.place(position, ai)
 
+                if status == 'no':
+                    raise Exception('FUCK! THIS AI IS SHIT!')
+
+                print('AI place at {}, black: {}, white: {}'.format(
+                    (position[1], position[0]), reversi.number[1], reversi.number[2]
+                ) )
                 draw()
 
                 if status.startswith('end'):
@@ -89,8 +97,6 @@ class ReversiGUIManager():
                     self.canvas.unbind('<Motion>')
                     self.canvas.unbind('<Button-1>')
                     return
-                elif status != 'ok':
-                    raise Exception('FUCK! THIS AI IS SHIT!')
                 
                 aiPlayed = True
             
@@ -115,6 +121,9 @@ class ReversiGUIManager():
             _ = reversi.place(position, ai)
 
             draw()
+            print('AI place at {}, black: {}, white: {}'.format(
+                    (position[1], position[0]), reversi.number[1], reversi.number[2]
+            ) )
 
         self.canvas.bind('<Motion>', hint)
         self.canvas.bind('<Button-1>', turn)
@@ -124,12 +133,13 @@ class ReversiGUIManager():
 if __name__ == '__main__':
     reversi = Reversi()
 
-    import random
-    def randomAgent(reversi: Reversi, who: int):
-        # assert reversi.next == who
-        available = [(y, x) for (y, x) in itertools.product(range(reversi.size), repeat=2) if reversi.good[y][x]]
-        return random.choice(available)
+    # import random
+    # def randomAgent(reversi: Reversi, who: int):
+    #     # assert reversi.next == who
+    #     available = [(y, x) for (y, x) in itertools.product(range(reversi.size), repeat=2) if reversi.good[y][x]]
+    #     return random.choice(available)
+    agent = Agent()
     
     gui = ReversiGUIManager()
     who = 1 if tkinter.messagebox.askquestion(title='Reversi', message='user play first?') == 'yes' else 2
-    gui.play(reversi, who, randomAgent)
+    gui.play(reversi, who, agent.brain)
