@@ -12,12 +12,12 @@ import os
 import itertools
 
 GAMMA = 0.99
-EPISODES = 100_000
+EPISODES = 10_000
 SAVE_INTERVAL = 100
-NUM_WORKERS = 28
-BATCH_SIZE = 32
-VALUE_LOSS_COEF = 0.5
-ENTROPY_LOSS_CEOF = 0.01
+NUM_WORKERS = 56
+BATCH_SIZE = 64
+VALUE_LOSS_COEF = 0.1
+ENTROPY_LOSS_COEF = 0.05
 
 class EpisodeData(Dataset):
     # 为了使用DataLoader
@@ -104,7 +104,7 @@ def main():
             action_loss = -(advantages.detach() * action_log_probs).mean()
 
             optimizer.zero_grad()
-            (VALUE_LOSS_COEF * value_loss + action_loss - ENTROPY_LOSS_CEOF * dist_entropy).backward()
+            (VALUE_LOSS_COEF * value_loss + action_loss - ENTROPY_LOSS_COEF * dist_entropy).backward()
             optimizer.step()
 
             value_loss_total += value_loss.item()

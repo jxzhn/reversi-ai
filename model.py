@@ -60,8 +60,10 @@ class ActorCritic(nn.Module): # 卷积残差网络
         self.layer3 = self.make_layer(2)
         self.layer4 = self.make_layer(3)
 
-        self.critic_linear = nn.Linear(self.planes[-1], 1)
-        self.actor_linear = nn.Linear(self.planes[-1], SIZE*SIZE)
+        self.critic_fc = nn.Linear(self.planes[-1], 512)
+        self.critic = nn.Linear(512, 1)
+        self.actor_fc = nn.Linear(self.planes[-1], 512)
+        self.actor = nn.Linear(512, SIZE*SIZE)
     
     def make_layer(self, idx: int) -> nn.Module:
         depth = self.depths[idx]
@@ -87,6 +89,6 @@ class ActorCritic(nn.Module): # 卷积残差网络
         out = self.layer4(out)
         out = F.adaptive_avg_pool2d(out, (1, 1))
         out = out.view(out.size(0), -1)
-        value = self.critic_linear(out)
-        policy = F.softmax(self.actor_linear(out), dim=-1)
+        value = self.critic(F.relu(self.critic_fc(out)))
+        policy = F.softmax(self.actor(F.relu(self.actor_fc(out))), dim=-1)
         return value, policy

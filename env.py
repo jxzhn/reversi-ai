@@ -104,13 +104,14 @@ class Envs:
         
         return sum(self.end) == self.num_workers, torch.stack([info[3] if info else torch.zeros((3, SIZE, SIZE)) for info in infos])
 
-    # 从后向前更新Return（这里我懒得搞并行了，感觉速度差别不大）
+    # 从后向前更新Return，黑棋和白棋分开计算
     def setReturn(self):
         for history in self.historys:
-            R = 0
+            R = [0, 0]
             for t in range(len(history)-1 , -1, -1):
-                R = history[t][2] + self.gamma * R
-                history[t][2] = R
+                who = int(history[t][0][2][0][0])
+                R[who] = history[t][2] + self.gamma * R[who]
+                history[t][2] = R[who]
 
     # 取得合并后的history
     def readHistory(self) -> List[SARSD]:

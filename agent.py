@@ -24,6 +24,6 @@ class Agent:
             else:
                 policy[y * SIZE + x] += 1e-8 # 防止概率全为 0
         
-        action = Categorical(probs=policy).sample().item()
+        action = policy.max(dim=-1).indices.item()
         return (action // SIZE, action % SIZE)
         

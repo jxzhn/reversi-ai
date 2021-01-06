@@ -2,6 +2,8 @@ from typing import Callable
 
 from reversi import Coordinate, Reversi
 
+EPSISODES = 1000
+
 def play(reversi: Reversi, player1: Callable[[Reversi, int], Coordinate], player2: Callable[[Reversi, int], Coordinate]) -> int:
     while True:
         # 黑棋下子
@@ -41,8 +43,8 @@ if __name__ == '__main__':
     import time
     t = time.time()
 
-    for i in range(50):
-        print(i, end='\r')
+    for i in range(EPSISODES // 2):
+        print(i * 2, end='\r')
         # AI先手
         reversi = Reversi()
         counter[[2, 0, 1][play(reversi, agent.brain, randomAgent)]] += 1
@@ -50,5 +52,5 @@ if __name__ == '__main__':
         reversi = Reversi()
         counter[[2, 1, 0][play(reversi, randomAgent, agent.brain)]] += 1
     
-    print(f'100 episodes finished in {time.time() - t :g} seconds, {counter}')
+    print(f'{EPSISODES} episodes finished in {time.time() - t :g} seconds, {counter}')
     
