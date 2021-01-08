@@ -4,6 +4,8 @@ from multiprocessing import Pool
 import torch
 import itertools
 from reversi import Coordinate, Reversi, SIZE
+from minimax import Agent as Minimax # Minimax Agent
+from copy import deepcopy
 
 # state, action, Return, next_state, done
 SARSD = Tuple[torch.Tensor, Coordinate, float, torch.Tensor, bool]
@@ -38,6 +40,9 @@ def takeAction(arg: Tuple[Reversi, Coordinate, bool]) -> Tuple[Reversi, bool, SA
     if end:
         return reversi, True, None
 
+    # 看看是黑棋还是白棋
+    who = reversi.next
+    minimaxRole = 2 if who == 1 else 2
     # 保存走之前的状态
     s = torch.Tensor(getBoardState(reversi))
     
@@ -46,23 +51,39 @@ def takeAction(arg: Tuple[Reversi, Coordinate, bool]) -> Tuple[Reversi, bool, SA
     result = checkPlaceStatus(status)
     end = (result != -1)
 
+    # 计算reward，暂存在Return里
+    reward = 0
+    
+    if end:
+        # 已结束，计算reward
+        if result == who:
+            reward = 100
+        elif result == minimaxRole:
+            reward = -100
+        elif result == 0:
+            reward = 0
+    else:
+        # 若未结束，Minimax走棋再计算reward
+        while not end and reversi.next == minimaxRole:
+            status = reversi.place(Minimax.brain(reversi, minimaxRole), minimaxRole)
+            result = checkPlaceStatus(status)
+            end = (result != -1)
+        
+        if result == who:
+            reward = 100
+        elif result == minimaxRole:
+            reward = -100
+        elif result == 0:
+            reward = 0
+        elif reversi.number[who] > reversi.number[minimaxRole]:
+            reward = 1
+        elif reversi.number[who] < reversi.number[minimaxRole]:
+            reward = -1
+        else:
+            reward = 0
+
     # 获取更新的状态
     sn = torch.Tensor(getBoardState(reversi))
-    
-    # 计算reward，暂存在Return里
-    a = reversi.next        # 己方
-    b = 2 if a == 1 else 1  # 敌方
-    
-    if result == -1 and reversi.number[a] > reversi.number[b]:
-        reward = 1
-    elif result == -1 and reversi.number[a] < reversi.number[b]:
-        reward = -1
-    elif result == a:
-        reward = 100
-    elif result == b:
-        reward = -100
-    else:
-        reward = 0
 
     return reversi, end, [s, action, reward, sn, end]
 
@@ -71,16 +92,19 @@ class Envs:
     def __init__(self, num_workers: int, gamma: float):
         self.num_workers = num_workers
         self.gamma = gamma
-        self.historys = [[] for i in range(num_workers)] # 分开记录每个棋局的历史记录
-        self.end = [False for i in range(num_workers)] # 某个worker的棋局是否结束
-        self.reversis = [Reversi() for i in range(num_workers)]
+        self.historys = [None for _ in range(num_workers)] # 分开记录每个棋局的历史记录
+        self.end = [None for _ in range(num_workers)] # 某个worker的棋局是否结束
+        self.reversis = [None for _ in range(num_workers)]
         self.pool = Pool(self.num_workers)
 
     # 重置所有的Reversi实例
     def reset(self) -> torch.Tensor: # (num_worker, 3, SIZE, SIZE)
-        self.historys = [[] for _ in range(self.num_workers)]
-        self.reversis = [Reversi() for _ in range(self.num_workers)]
+        self.historys = [[] for _ in range(self.num_workers)]        
         self.end = [False for _ in range(self.num_workers)]
+        black = Reversi()
+        white = Reversi()
+        white.place(Minimax.brain(white, 1), 1)
+        self.reversis = [deepcopy(black) for _ in range(self.num_workers // 2)] + [deepcopy(white) for _ in range(self.num_workers // 2)]
         states = self.pool.map(getBoardState, self.reversis)
         return torch.Tensor(states)
 
@@ -104,14 +128,13 @@ class Envs:
         
         return sum(self.end) == self.num_workers, torch.stack([info[3] if info else torch.zeros((3, SIZE, SIZE)) for info in infos])
 
-    # 从后向前更新Return，黑棋和白棋分开计算
+    # 从后向前更新Return
     def setReturn(self):
         for history in self.historys:
-            R = [0, 0]
+            R = 0
             for t in range(len(history)-1 , -1, -1):
-                who = int(history[t][0][2][0][0])
-                R[who] = history[t][2] + self.gamma * R[who]
-                history[t][2] = R[who]
+                R = history[t][2] + self.gamma * R
+                history[t][2] = R
 
     # 取得合并后的history
     def readHistory(self) -> List[SARSD]:

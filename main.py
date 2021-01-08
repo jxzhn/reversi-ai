@@ -11,7 +11,7 @@ from reversi import SIZE
 import os
 import itertools
 
-GAMMA = 0.99
+GAMMA = 0.9
 EPISODES = 10_000
 SAVE_INTERVAL = 100
 NUM_WORKERS = 56

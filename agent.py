@@ -10,7 +10,7 @@ class Agent:
         self.net = ActorCritic()
         self.net.load_state_dict(torch.load('models/good.pt', map_location='cpu'))
         self.net.eval()
-        torch.no_grad() # 关闭梯度记录
+        torch.no_grad().__enter__() # 关闭梯度记录
     
     def brain(self, reversi: Reversi, who: int) -> Coordinate:
         # assert reversi.next == who
